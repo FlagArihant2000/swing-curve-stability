@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt # For plotting the swing curve
 import math as m # For performing mathematical operations
 
-# Input the necessary inputs
+# Input the necessary data
 
 G = 1 # pu
 H = 2.5 # Inertia Constant
@@ -9,8 +9,8 @@ f = 50 # Frequency
 
 M = (G * H)/(180 * f) # Moment of Inertia
 
-E = 450 # Voltage Behind transient reactance
-V = 400 # Generator voltage
+E = 450 # Voltage Behind transient reactance in MVA
+V = 400 # Generator voltage in kV
 MVA = 500 # MVA rating of generator
 load = 460 # Load in kW
 
@@ -21,11 +21,15 @@ X1 = 0.5 # Prefault reactance
 X2 = 1.0 # During fault reactance
 X3 = 0.75 # Postfault reactance
 
-pfactor = 1000
+pfactor = 1000 # This is just a multiplying factor
 
-dt = 0.0002 * pfactor# Swing curve time interval
-t1 = 0.066 * pfactor# Fault clearing time
-T = 0.5 * pfactor# Total time for execution
+time_interval = 0.002 # Time interval
+fault_clearing = 0.066 # Fault clearing time
+total_time = 0.5 # Total time for execution
+
+dt = time_interval * pfactor# Swing curve time interval
+t1 = fault_clearing * pfactor# Fault clearing time
+T = total_time * pfactor# Total time for execution
 
 Vpu = V / kVAb
 Epu = E / kVAb
@@ -53,7 +57,7 @@ Pe0 = Pmax1 * m.sin(delta) # Intial electrical power
 Pa = ppt - Pe0
 ddchange = sm * Pa
 while(t <= T):
-	TIME = TIME + [t]
+	TIME = TIME + [t/pfactor]
 	if t == 0:
 		Pe = Pmax2 * m.sin(delta)
 		Pa = ppt - Pe
@@ -67,19 +71,17 @@ while(t <= T):
 		ddchange = ddchange + (sm * Pa)
 		EP = EP + [Pe]
 		DEL = DEL + [delta * (180/m.pi)]
-	elif t == t1:
+	elif t == t1 or (t - dt < t1 and t > t1):
 		# Before clearance
 		delta = ((delta * (180/m.pi)) + ddchange) * m.pi/180
 		Pe = Pmax2 * m.sin(delta)
 		Pa = ppt - Pe
-		#ddchange = ddchange + (sm * Pa)
 		dd1 = (sm * Pa)
 		# after clearance
 		Pe = Pmax3 * m.sin(delta)
 		Pa = ppt - Pe
 		dd2 = (sm * Pa)
 		ddchange = ddchange + (dd1 + dd2)/2
-		#delta = ((delta * (180/m.pi)) + ddchange) * m.pi/180
 
 		EP = EP + [Pe]
 		DEL = DEL + [delta * (180/m.pi)]
@@ -93,10 +95,10 @@ while(t <= T):
 	t = t + dt
 
 
-# Plotting swing equation
-plt.scatter(TIME, DEL, c = 'r')
-#plt.scatter(DEL, EP, c = 'r')
-plt.xlabel('time(ms)')
+# Plotting output
+plt.scatter(TIME, DEL, c = 'r', linewidth=1e-3)
+plt.xlabel('time(s)')
 plt.ylabel('Rotor angle (delta)')
+plt.title("Swing Curve")
 plt.show()
 
